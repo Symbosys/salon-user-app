@@ -1,10 +1,11 @@
 import { API_URL } from "@/constants/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  AppState,
   Modal,
   ScrollView,
   StyleSheet,
@@ -62,9 +63,36 @@ type Booking = {
 export default function BookingsScreen() {
   const router = useRouter();
 
+  const { tab } = useLocalSearchParams<{ tab?: string }>();
+
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState("Pending");
+
+  useEffect(() => {
+    if (typeof tab !== "string") return;
+
+    const normalizedTab = tab.toLowerCase();
+
+    switch (normalizedTab) {
+      case "confirmed":
+        setSelectedTab("Confirmed");
+        break;
+
+      case "completed":
+        setSelectedTab("Completed");
+        break;
+
+      case "rejected":
+        setSelectedTab("Rejected");
+        break;
+
+      case "pending":
+        setSelectedTab("Pending");
+        break;
+    }
+  }, [tab]);
+
   const [currentTime, setCurrentTime] = useState(new Date());
 
   const [reviewModalVisible, setReviewModalVisible] = useState(false);
@@ -122,6 +150,16 @@ export default function BookingsScreen() {
     }, 30000);
 
     return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active") {
+        loadBookings();
+      }
+    });
+
+    return () => subscription.remove();
   }, []);
 
   // ================= DATE FORMAT =================
@@ -567,38 +605,22 @@ export default function BookingsScreen() {
                         </Text>
                       </View>
 
+                      {/* Booking ID */}
                       <View style={styles.detailRow}>
                         <Text style={styles.detailLabel}>Booking ID</Text>
-                        {selectedTab === "Confirmed" && booking.qrCode && (
-                          <View style={styles.qrSection}>
-                            <Text style={styles.qrTitle}>
-                              Show this QR code at the salon
-                            </Text>
 
-                            <View style={styles.qrBox}>
-                              <QRCode
-                                value={booking.qrCode}
-                                size={150}
-                                backgroundColor="#FFFFFF"
-                                color="#191522"
-                              />
-                            </View>
-
-                            <Text style={styles.qrHint}>
-                              Scan to verify your booking
-                            </Text>
-                          </View>
-                        )}
                         <Text style={styles.detailValue}>
                           {booking.bookingId}
                         </Text>
                       </View>
 
-                      {booking.qrCode && (
+                      {/* QR Code - Confirmed only */}
+                      {selectedTab === "Confirmed" && booking.qrCode && (
                         <View style={styles.qrSection}>
                           <Text style={styles.qrTitle}>
                             Show this QR code at the salon
                           </Text>
+
                           <View style={styles.qrBox}>
                             <QRCode
                               value={booking.qrCode}
@@ -607,6 +629,7 @@ export default function BookingsScreen() {
                               color="#191522"
                             />
                           </View>
+
                           <Text style={styles.qrHint}>
                             Scan to verify your booking
                           </Text>
@@ -938,11 +961,13 @@ export default function BookingsScreen() {
 
                         <View style={styles.completedBadge}>
                           <Text style={styles.completedText}>
-                            {booking.cancelReason === "SALON_NOT_ACCEPTED"
-                              ? "Salon Not Accepted"
-                              : booking.cancelReason === "NOT_ARRIVED"
-                                ? "Not Arrived"
-                                : "Rejected"}
+                            {booking.cancelReason === "Admin cancelled"
+                              ? "Rejected by Admin"
+                              : booking.cancelReason === "SALON_NOT_ACCEPTED"
+                                ? "Salon Not Accepted"
+                                : booking.cancelReason === "NOT_ARRIVED"
+                                  ? "Not Arrived"
+                                  : "Rejected"}
                           </Text>
                         </View>
                       </View>

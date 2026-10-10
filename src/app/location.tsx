@@ -80,6 +80,10 @@ export default function LocationScreen() {
       // Find address components
       const components = address.address_components || [];
 
+      console.log("========== ADDRESS COMPONENTS ==========");
+      console.dir(components, { depth: null });
+      console.log("========================================");
+
       const getComponent = (type: string) => {
         const component = components.find((item: any) =>
           item.types?.includes(type),

@@ -75,13 +75,17 @@ export default function OffersScreen() {
           <TouchableOpacity
             style={styles.backButton}
             activeOpacity={0.7}
-            onPress={() => router.back()}
+            onPress={() => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace("/(tabs)" as any);
+              }
+            }}
           >
             <Text style={styles.backText}>‹</Text>
           </TouchableOpacity>
-
           <Text style={styles.headerTitle}>Offers & Coupons</Text>
-
           <View style={styles.headerSpace} />
         </View>
 

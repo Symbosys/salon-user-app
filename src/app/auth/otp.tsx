@@ -1,4 +1,5 @@
 import { API_URL } from "@/constants/api";
+import { registerForPushNotificationsAsync } from "@/services/notifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
@@ -125,10 +126,22 @@ export default function OTPScreen() {
         return;
       }
 
+      const user = data.user;
+
+      // Save login information
       await AsyncStorage.setItem("authToken", "logged_in");
       await AsyncStorage.setItem("customerMobile", mobile);
-      await AsyncStorage.setItem("customerId", String(data.user.id));
+      await AsyncStorage.setItem("customerId", String(user.id));
 
+      await registerForPushNotificationsAsync();
+
+      // Check account status
+      if (user.status === "SUSPENDED") {
+        router.replace("/account-suspended" as any);
+        return;
+      }
+
+      // Existing flow for active users
       router.replace("/location" as any);
     } catch (error) {
       console.error(error);

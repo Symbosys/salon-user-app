@@ -542,31 +542,16 @@ export default function HomeScreen() {
 
       const pincode = getComponent("postal_code");
 
-      const localAddress = components
-        .filter((item: any) => {
-          const types = item.types || [];
-
-          return (
-            types.includes("route") ||
-            types.includes("street_address") ||
-            types.includes("premise") ||
-            types.includes("subpremise") ||
-            types.includes("neighborhood") ||
-            types.includes("sublocality")
-          );
-        })
-        .map((item: any) => item.long_name)
-        .filter(Boolean)
-        .join(", ");
+      const actualAddress = address.formatted_address || "";
 
       const detectedLocation = {
         latitude,
         longitude,
-        locality: localAddress,
+        locality: actualAddress,
         city,
         state,
         pincode,
-        address: localAddress,
+        address: actualAddress,
       };
 
       console.log("========== CURRENT LOCATION ==========");
@@ -575,7 +560,7 @@ export default function HomeScreen() {
       console.log("City:", city);
       console.log("State:", state);
       console.log("Pincode:", pincode);
-      console.log("Full Address:", localAddress);
+      console.log("Full Address:", actualAddress);
       console.log("======================================");
 
       // Save location
@@ -589,7 +574,7 @@ export default function HomeScreen() {
       // Update Home location
       setUserLatitude(latitude);
       setUserLongitude(longitude);
-      setLocationName(localAddress);
+      setLocationName(actualAddress);
 
       // Close modal
       setLocationModalVisible(false);
@@ -1423,26 +1408,9 @@ window.selectPlace = selectPlace;
 
                       const components = address.address_components || [];
 
-                      const localAddress = components
-                        .filter((item: any) => {
-                          const types = item.types || [];
+                      const actualAddress = address.formatted_address || "";
 
-                          return (
-                            types.includes("route") ||
-                            types.includes("street_address") ||
-                            types.includes("premise") ||
-                            types.includes("subpremise") ||
-                            types.includes("neighborhood") ||
-                            types.includes("sublocality")
-                          );
-                        })
-                        .map((item: any) => item.long_name)
-                        .filter(Boolean)
-                        .join(", ");
-
-                      setSelectedAddress(
-                        localAddress || address.formatted_address || "",
-                      );
+                      setSelectedAddress(actualAddress);
 
                       const getComponent = (type: string) => {
                         const component = components.find((item: any) =>

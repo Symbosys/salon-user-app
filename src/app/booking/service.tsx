@@ -129,7 +129,7 @@ export default function ServiceSelectionScreen() {
             <Text style={styles.salonEmoji}>💇‍♀️</Text>
           </View>
 
-          <View>
+          <View style={styles.salonInfo}>
             <Text style={styles.salonName}>{salon?.name || "Salon"}</Text>
 
             <Text style={styles.salonLocation}>
@@ -312,7 +312,13 @@ const styles = StyleSheet.create({
   salonLocation: {
     marginTop: 5,
     fontSize: 12,
+    lineHeight: 17,
     color: "#777",
+  },
+
+  salonInfo: {
+    flex: 1,
+    minWidth: 0,
   },
 
   sectionTitle: {
