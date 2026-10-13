@@ -99,7 +99,6 @@ export default function PaymentScreen() {
           date,
           time,
 
-          // Booking fee DB me save karne ke liye
           bookingFee: amount,
 
           // Selected offer discount

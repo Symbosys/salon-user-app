@@ -196,6 +196,9 @@ export default function BookingsScreen() {
       case "PENDING":
         return "Pending";
 
+      case "CONFIRMED":
+        return "Confirmed";
+
       case "ACCEPTED":
         return "Confirmed";
 
@@ -281,125 +284,6 @@ export default function BookingsScreen() {
       : appointmentDateTime;
   };
 
-  const getCancellationState = (booking: Booking) => {
-    // ONLY PENDING
-    if (booking.status?.toUpperCase() !== "PENDING") {
-      return {
-        canCancel: false,
-        showButton: false,
-        label: "",
-      };
-    }
-
-    const appointmentDateTime = getAppointmentDateTime(booking);
-
-    if (!appointmentDateTime) {
-      return {
-        canCancel: false,
-        showButton: false,
-        label: "",
-      };
-    }
-
-    const cancelFrom = new Date(appointmentDateTime.getTime() - 15 * 60 * 1000);
-
-    // 15 minutes before appointment -> cancellation enabled
-    if (currentTime >= cancelFrom && currentTime < appointmentDateTime) {
-      return {
-        canCancel: true,
-        showButton: true,
-        label: "Cancel Booking",
-      };
-    }
-
-    // Before cancellation window
-    if (currentTime < cancelFrom) {
-      return {
-        canCancel: false,
-        showButton: true,
-        label: `Cancel available at ${cancelFrom.toLocaleTimeString("en-IN", {
-          hour: "2-digit",
-          minute: "2-digit",
-        })}`,
-      };
-    }
-
-    return {
-      canCancel: false,
-      showButton: false,
-      label: "",
-    };
-  };
-
-  const handleCancelBooking = async (booking: Booking) => {
-    const cancellationState = getCancellationState(booking);
-
-    if (!cancellationState.canCancel) return;
-
-    Alert.alert(
-      "Cancel Booking",
-      `Are you sure you want to cancel this booking? Your booking fee of ₹${Number(
-        booking.bookingFee || 0,
-      ).toFixed(0)} will be eligible for refund.`,
-      [
-        {
-          text: "No",
-          style: "cancel",
-        },
-        {
-          text: "Yes, Cancel",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              const customerId = await AsyncStorage.getItem("customerId");
-
-              if (!customerId) {
-                Alert.alert(
-                  "Error",
-                  "Customer ID not found. Please login again.",
-                );
-                return;
-              }
-
-              const response = await fetch(
-                `${API_URL}/api/bookings/customer/${customerId}/${booking.bookingId}/cancel`,
-                {
-                  method: "PATCH",
-                },
-              );
-
-              const data = await response.json();
-
-              if (!response.ok) {
-                Alert.alert(
-                  "Unable to Cancel",
-                  data.message || "Booking cannot be cancelled now.",
-                );
-                return;
-              }
-
-              await loadBookings();
-
-              Alert.alert(
-                "Booking Cancelled",
-                `Your booking has been cancelled. Refund amount: ₹${Number(
-                  data.refundAmount || booking.bookingFee || 0,
-                ).toFixed(0)}.`,
-              );
-            } catch (error) {
-              console.error("Customer Cancel Booking Error:", error);
-
-              Alert.alert(
-                "Error",
-                "Unable to cancel booking. Please try again.",
-              );
-            }
-          },
-        },
-      ],
-    );
-  };
-
   // ================= BOOKING STATUS =================
   const isPastBooking = (booking: Booking) => {
     const appointmentDateTime = getAppointmentDateTime(booking);
@@ -420,14 +304,9 @@ export default function BookingsScreen() {
   // ================= TAB FILTER =================
   const getTabBookings = (list: Booking[]) => {
     switch (selectedTab) {
-      case "Pending":
-        return list.filter(
-          (booking) => booking.status?.toUpperCase() === "PENDING",
-        );
-
       case "Confirmed":
         return list.filter((booking) =>
-          ["ACCEPTED", "ARRIVED", "STARTED"].includes(
+          ["CONFIRMED", "ACCEPTED", "ARRIVED", "STARTED"].includes(
             booking.status?.toUpperCase(),
           ),
         );
@@ -513,7 +392,7 @@ export default function BookingsScreen() {
       >
         {/* ================= BOOKING TABS ================= */}
         <View style={styles.tabs}>
-          {["Pending", "Confirmed", "Completed", "Rejected"].map((tab) => (
+          {["Confirmed", "Completed", "Rejected"].map((tab) => (
             <TouchableOpacity
               key={tab}
               style={[styles.tab, selectedTab === tab && styles.activeTab]}
@@ -656,37 +535,6 @@ export default function BookingsScreen() {
                           <Text style={styles.detailsText}>View Salon</Text>
                         </TouchableOpacity>
                       </View>
-
-                      {selectedTab === "Pending" &&
-                        (() => {
-                          const cancellationState =
-                            getCancellationState(booking);
-
-                          if (!cancellationState.showButton) return null;
-
-                          return (
-                            <TouchableOpacity
-                              style={[
-                                styles.cancelButton,
-                                !cancellationState.canCancel &&
-                                  styles.disabledCancelButton,
-                              ]}
-                              activeOpacity={0.85}
-                              disabled={!cancellationState.canCancel}
-                              onPress={() => handleCancelBooking(booking)}
-                            >
-                              <Text
-                                style={[
-                                  styles.cancelButtonText,
-                                  !cancellationState.canCancel &&
-                                    styles.disabledCancelButtonText,
-                                ]}
-                              >
-                                {cancellationState.label}
-                              </Text>
-                            </TouchableOpacity>
-                          );
-                        })()}
                     </View>
                   ))
                 )}
@@ -962,12 +810,14 @@ export default function BookingsScreen() {
                         <View style={styles.completedBadge}>
                           <Text style={styles.completedText}>
                             {booking.cancelReason === "Admin cancelled"
-                              ? "Rejected by Admin"
-                              : booking.cancelReason === "SALON_NOT_ACCEPTED"
-                                ? "Salon Not Accepted"
-                                : booking.cancelReason === "NOT_ARRIVED"
-                                  ? "Not Arrived"
-                                  : "Rejected"}
+                              ? "Cancelled by Admin"
+                              : booking.cancelReason === "SALON_CANCELLED"
+                                ? "Cancelled by Salon"
+                                : booking.cancelReason === "SALON_NOT_ACCEPTED"
+                                  ? "Salon Not Accepted"
+                                  : booking.cancelReason === "NOT_ARRIVED"
+                                    ? "Not Arrived"
+                                    : "Cancelled"}
                           </Text>
                         </View>
                       </View>
@@ -1514,34 +1364,6 @@ const styles = StyleSheet.create({
 
   activeTabText: {
     color: "#FFFFFF",
-    fontWeight: "700",
-  },
-
-  cancelButton: {
-    marginTop: 12,
-    height: 46,
-    width: "100%",
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#DC2626",
-  },
-
-  cancelButtonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "800",
-  },
-
-  disabledCancelButton: {
-    backgroundColor: "#F1F1F3",
-    borderWidth: 1,
-    borderColor: "#E1E1E5",
-  },
-
-  disabledCancelButtonText: {
-    color: "#8A8A93",
-    fontSize: 13,
     fontWeight: "700",
   },
 });
