@@ -67,7 +67,7 @@ export default function BookingsScreen() {
 
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTab, setSelectedTab] = useState("Pending");
+  const [selectedTab, setSelectedTab] = useState("Confirmed");
 
   useEffect(() => {
     if (typeof tab !== "string") return;
