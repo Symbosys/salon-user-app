@@ -10,7 +10,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
 type Offer = {
   id: number;
   title: string;
@@ -18,15 +17,12 @@ type Offer = {
   discount: number;
   isActive: boolean;
 };
-
 type Salon = {
   id: number;
   name: string;
 };
-
 export default function CouponsScreen() {
   const router = useRouter();
-
   const { salonId, serviceIds, date, time, staffId, staffName, offerId } =
     useLocalSearchParams<{
       salonId?: string;
@@ -37,21 +33,17 @@ export default function CouponsScreen() {
       staffName?: string;
       offerId?: string;
     }>();
-
   const [offers, setOffers] = useState<Offer[]>([]);
   const [salon, setSalon] = useState<Salon | null>(null);
   const [serviceTotal, setServiceTotal] = useState(0);
   const [loading, setLoading] = useState(true);
-
   const loadOffers = useCallback(async () => {
     try {
       setLoading(true);
-
       if (!salonId) {
         setOffers([]);
         return;
       }
-
       const [offerResponse, salonResponse, serviceResponse] = await Promise.all(
         [
           fetch(`${API_URL}/api/offers/${salonId}`),
@@ -59,15 +51,12 @@ export default function CouponsScreen() {
           fetch(`${API_URL}/api/services/${salonId}`),
         ],
       );
-
       const offerData = await offerResponse.json();
       const salonData = await salonResponse.json();
       const serviceData = await serviceResponse.json();
-
       const selectedIds = serviceIds
         ? serviceIds.split(",").filter(Boolean).map(Number)
         : [];
-
       const total = Array.isArray(serviceData)
         ? serviceData
             .filter((service: any) => selectedIds.includes(Number(service.id)))
@@ -76,24 +65,19 @@ export default function CouponsScreen() {
               0,
             )
         : 0;
-
       setServiceTotal(total);
-
       if (Array.isArray(offerData)) {
         const salonOffers = offerData.sort(
           (a: Offer, b: Offer) => Number(b.discount) - Number(a.discount),
         );
-
         setOffers(salonOffers);
       } else {
         setOffers([]);
       }
-
       if (Array.isArray(salonData)) {
         const selectedSalon = salonData.find(
           (item: Salon) => Number(item.id) === Number(salonId),
         );
-
         if (selectedSalon) {
           setSalon(selectedSalon);
         }
@@ -105,33 +89,25 @@ export default function CouponsScreen() {
       setLoading(false);
     }
   }, [salonId]);
-
   useFocusEffect(
     useCallback(() => {
       loadOffers();
     }, [loadOffers]),
   );
-
   const getMinAmount = (offer: Offer, index: number) => {
     const title = offer.title.toLowerCase();
-
-    // Dummy coupon conditions for prototype testing.
     if (title.includes("haircut")) return 500;
     if (title.includes("facial")) return 300;
     if (title.includes("color")) return 200;
-
     return [500, 300, 200][index] ?? 250;
   };
-
   const isOfferValid = (offer: Offer, index: number) => {
     return (
       offer.isActive === true && serviceTotal >= getMinAmount(offer, index)
     );
   };
-
   const handleApply = (offer: Offer, index: number) => {
     if (!isOfferValid(offer, index)) return;
-
     router.replace({
       pathname: "/booking/summary",
       params: {
@@ -145,7 +121,6 @@ export default function CouponsScreen() {
       },
     } as any);
   };
-
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -156,7 +131,6 @@ export default function CouponsScreen() {
       </SafeAreaView>
     );
   }
-
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
@@ -170,13 +144,10 @@ export default function CouponsScreen() {
         >
           <Text style={styles.backText}>‹</Text>
         </TouchableOpacity>
-
         <Text style={styles.title}>Coupons & Offers</Text>
-
         <Text style={styles.subtitle}>
           {salon?.name || "Salon"} offers available for you
         </Text>
-
         {offers.length === 0 ? (
           <View style={styles.emptyCard}>
             <Text style={styles.emptyTitle}>No offers available</Text>
@@ -188,7 +159,6 @@ export default function CouponsScreen() {
           offers.map((offer, index) => {
             const isValid = isOfferValid(offer, index);
             const isApplied = Number(offerId) === Number(offer.id);
-
             return (
               <View
                 key={offer.id}
@@ -210,7 +180,6 @@ export default function CouponsScreen() {
                       OFF
                     </Text>
                   </View>
-
                   <View style={styles.offerInfo}>
                     <View style={styles.titleRow}>
                       <Text
@@ -222,14 +191,12 @@ export default function CouponsScreen() {
                       >
                         {offer.title}
                       </Text>
-
                       {index === 0 && isValid && (
                         <View style={styles.bestBadge}>
                           <Text style={styles.bestBadgeText}>BEST</Text>
                         </View>
                       )}
                     </View>
-
                     {!!offer.description && (
                       <Text
                         style={[
@@ -241,12 +208,10 @@ export default function CouponsScreen() {
                         {offer.description}
                       </Text>
                     )}
-
                     {!isValid && (
                       <Text style={styles.invalidText}>Not available</Text>
                     )}
                   </View>
-
                   <TouchableOpacity
                     style={[
                       styles.applyButton,
@@ -272,13 +237,11 @@ export default function CouponsScreen() {
             );
           })
         )}
-
         <View style={{ height: 30 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

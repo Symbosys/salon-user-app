@@ -12,32 +12,23 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
 export default function FavoriteSalonsScreen() {
   const router = useRouter();
-
   const [favorites, setFavorites] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
   const fetchFavorites = useCallback(async () => {
     try {
       setLoading(true);
-
       const customerId = await AsyncStorage.getItem("customerId");
-
       if (!customerId) {
         setFavorites([]);
         return;
       }
-
       const response = await fetch(`${API_URL}/api/favorites/${customerId}`);
-
       const data = await response.json();
-
       if (!response.ok) {
         throw new Error(data?.message || "Failed to fetch favorites");
       }
-
       setFavorites(Array.isArray(data) ? data : []);
     } catch (error) {
       console.log("Fetch Favorites Error:", error);
@@ -46,28 +37,23 @@ export default function FavoriteSalonsScreen() {
       setLoading(false);
     }
   }, []);
-
   useFocusEffect(
     useCallback(() => {
       fetchFavorites();
     }, [fetchFavorites]),
   );
-
   const removeFavorite = async (salonId: number) => {
     try {
       const customerId = await AsyncStorage.getItem("customerId");
-
       if (!customerId) {
         return;
       }
-
       const response = await fetch(
         `${API_URL}/api/favorites/${customerId}/${salonId}`,
         {
           method: "DELETE",
         },
       );
-
       if (response.ok) {
         setFavorites((prev) =>
           prev.filter((item) => Number(item.salonId) !== Number(salonId)),
@@ -77,11 +63,9 @@ export default function FavoriteSalonsScreen() {
       console.log("Remove Favorite Error:", error);
     }
   };
-
   const openSalon = (salonId: number) => {
     router.push(`/salon/${salonId}` as any);
   };
-
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -92,20 +76,17 @@ export default function FavoriteSalonsScreen() {
       </SafeAreaView>
     );
   }
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={() => router.back()}>
           <Text style={styles.backText}>‹</Text>
         </Pressable>
-
         <View>
           <Text style={styles.title}>Favorite Salons</Text>
           <Text style={styles.subtitle}>Your saved salons</Text>
         </View>
       </View>
-
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
@@ -113,9 +94,7 @@ export default function FavoriteSalonsScreen() {
         {favorites.length === 0 ? (
           <View style={styles.emptyBox}>
             <Text style={styles.emptyIcon}>♡</Text>
-
             <Text style={styles.emptyTitle}>No Favorite Salons</Text>
-
             <Text style={styles.emptyText}>
               Salons you favorite will appear here.
             </Text>
@@ -123,7 +102,6 @@ export default function FavoriteSalonsScreen() {
         ) : (
           favorites.map((item) => {
             const salon = item.salon;
-
             return (
               <Pressable
                 key={item.id}
@@ -140,23 +118,19 @@ export default function FavoriteSalonsScreen() {
                     <Text style={styles.placeholderText}>No Image</Text>
                   </View>
                 )}
-
                 <View style={styles.salonInfo}>
                   <Text style={styles.salonName} numberOfLines={1}>
                     {salon.name}
                   </Text>
-
                   <Text style={styles.location} numberOfLines={2}>
                     📍{" "}
                     {salon.address ||
                       [salon.city, salon.state].filter(Boolean).join(", ")}
                   </Text>
-
                   <Text style={styles.category}>
                     {salon.category || "Unisex Salon"}
                   </Text>
                 </View>
-
                 <Pressable
                   style={styles.heartButton}
                   onPress={() => removeFavorite(salon.id)}
@@ -167,19 +141,16 @@ export default function FavoriteSalonsScreen() {
             );
           })
         )}
-
         <View style={{ height: 30 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F8F7FC",
   },
-
   header: {
     paddingHorizontal: 20,
     paddingTop: 18,
@@ -187,7 +158,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-
   backButton: {
     width: 42,
     height: 42,
@@ -198,42 +168,35 @@ const styles = StyleSheet.create({
     marginRight: 12,
     elevation: 2,
   },
-
   backText: {
     fontSize: 32,
     lineHeight: 36,
     color: "#222",
     marginTop: -4,
   },
-
   title: {
     fontSize: 24,
     fontWeight: "800",
     color: "#191522",
   },
-
   subtitle: {
     fontSize: 13,
     color: "#777",
     marginTop: 3,
   },
-
   content: {
     paddingHorizontal: 20,
   },
-
   loadingScreen: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
   },
-
   loadingText: {
     marginTop: 10,
     fontSize: 13,
     color: "#777",
   },
-
   salonCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 18,
@@ -250,13 +213,11 @@ const styles = StyleSheet.create({
       height: 2,
     },
   },
-
   salonImage: {
     width: 90,
     height: 90,
     borderRadius: 14,
   },
-
   imagePlaceholder: {
     width: 90,
     height: 90,
@@ -265,38 +226,32 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-
   placeholderText: {
     fontSize: 11,
     color: "#888",
   },
-
   salonInfo: {
     flex: 1,
     marginLeft: 13,
     paddingRight: 8,
   },
-
   salonName: {
     fontSize: 16,
     fontWeight: "800",
     color: "#191522",
   },
-
   location: {
     fontSize: 11,
     color: "#777",
     marginTop: 6,
     lineHeight: 16,
   },
-
   category: {
     fontSize: 11,
     color: "#5B3CC4",
     fontWeight: "600",
     marginTop: 5,
   },
-
   heartButton: {
     width: 38,
     height: 38,
@@ -305,12 +260,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-
   heart: {
     fontSize: 21,
     color: "#5B3CC4",
   },
-
   emptyBox: {
     backgroundColor: "#FFFFFF",
     borderRadius: 18,
@@ -320,19 +273,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginTop: 20,
   },
-
   emptyIcon: {
     fontSize: 55,
     color: "#C9B9E8",
   },
-
   emptyTitle: {
     fontSize: 18,
     fontWeight: "800",
     color: "#191522",
     marginTop: 12,
   },
-
   emptyText: {
     fontSize: 13,
     color: "#888",
